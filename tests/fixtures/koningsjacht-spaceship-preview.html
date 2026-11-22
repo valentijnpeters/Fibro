@@ -21,11 +21,11 @@
   </header>
   <main id="tafel"></main>
   <script type="module">
-    import { maakKaartTafel } from './kaartspel-hulp.js?v=17'
+    import { maakKaartTafel } from './kaartspel-hulp.js?v=23'
     import { maakKoningsjachtScene } from './koningsjacht-scene.js?v=14'
     const hand=['k8','k2','s2','sA','h9','s5','h8','s9']
     const tafel=maakKaartTafel(document.getElementById('tafel'),{
-      solo:true,stijl:'modern',ondergrond:'hout',leesbareSelectie:true,naamAnder:'Voorbeeldtafel',groep:()=> 'alles',
+      solo:true,stijl:'modern',ondergrond:'hout',leesbareSelectie:true,stapelTekst:n=>'Taveerne: '+n,naamAnder:'Voorbeeldtafel',groep:()=> 'alles',
       magSpelen:ids=>ids.length>0,onSelectie:ids=>tafel.status(ids.length?'Gekozen: '+ids.join(', ')+' · test de achtergronden via de keuzelijsten hierboven.':'Klik of tik op een kaart om hem te kiezen.'),onSpeel:()=>{}
     })
     tafel.element.classList.add('kj','kj-modern')
