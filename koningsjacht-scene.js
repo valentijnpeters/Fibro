@@ -100,6 +100,30 @@ const MIDDELEEUWSE_KAARTSTIJL = `
 @media(prefers-reduced-motion:reduce){.kt-tafel.kj.kj-sfeer .kt-afleg .kt-ak.kt-gloed{animation:none}}
 `
 
+// Kleine, uitklapbare lampen in de cockpitwand. Ze zijn alleen zichtbaar in
+// een ruimteschip en komen rustig uit hun paneel zodra de lichtknop aanstaat.
+const COCKPIT_LAMPEN = `
+.kj-scene-decor .kj-ship-lampen{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .25s ease}
+.kj-scene-decor[data-scene="modern"][data-interior]:not([data-interior="none"])[data-lampen="aan"] .kj-ship-lampen{opacity:1}
+.kj-ship-lamp{position:absolute;top:27%;width:clamp(18px,2vw,28px);height:15px;filter:drop-shadow(0 2px 4px #0009)}
+.kj-ship-lamp.kj-links{left:5.5%}.kj-ship-lamp.kj-rechts{right:5.5%}
+.kj-ship-lamp.kj-binnen{top:30%}.kj-ship-lamp.kj-binnen.kj-links{left:12%}.kj-ship-lamp.kj-binnen.kj-rechts{right:12%}
+.kj-ship-lamp .kj-lamp-sokkel{position:absolute;inset:1px 0 auto;height:8px;border:1px solid #647d8c;border-radius:3px;background:linear-gradient(180deg,#243a49,#101d29 70%,#08121c);box-shadow:inset 0 1px #c1dce355,0 2px 3px #0008}
+.kj-ship-lamp .kj-lamp-arm{position:absolute;left:50%;top:5px;width:2px;height:0;background:linear-gradient(90deg,#607b89,#d6e5eb,#344c5a);transform:rotate(0deg);transform-origin:50% 0;transition:height .32s ease,transform .38s cubic-bezier(.2,.7,.2,1)}
+.kj-ship-lamp .kj-lamp-kop{position:absolute;left:50%;top:4px;width:9px;height:4px;border:1px solid #8099a5;border-radius:2px;background:linear-gradient(#a8bbc1,#354c59 65%,#111e29);opacity:0;transform:translate(-50%,0) rotate(0deg);transform-origin:50% 100%;transition:top .32s ease,opacity .18s ease .08s,transform .38s cubic-bezier(.2,.7,.2,1)}
+.kj-ship-lamp .kj-lamp-kop::after{content:"";position:absolute;inset:1px 1px auto;height:1px;border-radius:2px;background:#d7b9f9;box-shadow:0 0 5px 1px #cd88ff}
+.kj-ship-lamp .kj-lamp-bundel{position:absolute;top:10px;left:50%;width:clamp(72px,13vw,170px);height:clamp(110px,25vh,250px);opacity:0;transform:translateX(-50%) scaleY(.45);transform-origin:top center;transition:opacity .45s ease .12s,transform .48s ease .08s;clip-path:polygon(46% 0,54% 0,100% 100%,0 100%);background:linear-gradient(180deg,#f0caff22 0%,#dba7ff14 28%,#c18aff08 72%,transparent 100%);filter:blur(1px)}
+.kj-ship-lamp.kj-links .kj-lamp-bundel{left:70%;transform:translateX(-50%) rotate(-8deg) scaleY(.45)}.kj-ship-lamp.kj-rechts .kj-lamp-bundel{left:30%;transform:translateX(-50%) rotate(8deg) scaleY(.45)}
+.kj-scene-decor[data-lampen="aan"] .kj-ship-lamp .kj-lamp-arm{height:10px;transform:rotate(var(--kj-lamp-hoek,24deg))}
+.kj-scene-decor[data-lampen="aan"] .kj-ship-lamp .kj-lamp-kop{top:11px;opacity:1;transform:translate(-50%,0) rotate(var(--kj-kop-hoek,-32deg))}
+.kj-scene-decor[data-lampen="aan"] .kj-ship-lamp .kj-lamp-bundel{opacity:.7;transform:translateX(-50%) scaleY(1)}
+.kj-scene-decor[data-lampen="aan"] .kj-ship-lamp.kj-links .kj-lamp-bundel{transform:translateX(-50%) rotate(-8deg) scaleY(1)}
+.kj-scene-decor[data-lampen="aan"] .kj-ship-lamp.kj-rechts .kj-lamp-bundel{transform:translateX(-50%) rotate(8deg) scaleY(1)}
+.kj-ship-lamp.kj-binnen{--kj-lamp-hoek:35deg;--kj-kop-hoek:-35deg}
+.kj-ship-lamp.kj-buiten.kj-rechts,.kj-ship-lamp.kj-binnen.kj-rechts{--kj-lamp-hoek:-35deg;--kj-kop-hoek:35deg}
+@media(prefers-reduced-motion:reduce){.kj-scene-decor .kj-ship-lampen,.kj-ship-lamp *{transition:none!important}}
+`
+
 export function maakKoningsjachtScene(tafelElement, instellingen = {}) {
   if (!tafelElement?.ownerDocument) throw new Error('De kaarttafel ontbreekt.')
   eigenaren.get(tafelElement)?.stop()
@@ -115,7 +139,7 @@ export function maakKoningsjachtScene(tafelElement, instellingen = {}) {
   }
   // `middeleeuws` blijft werken voor eerdere aanroepers; nieuwe instellingen
   // kiezen de tafel met `scene`.
-  let opties = { beweging: false, scene: null, middeleeuws: false, flikkeren: true, bierpul: false, bierInhoud: 100, bierOorRechts: true, eigenNaam: '', anderBier: null, ...instellingen }
+  let opties = { beweging: false, scene: null, modernInterior: 'none', lampenAan: false, middeleeuws: false, flikkeren: true, bierpul: false, bierInhoud: 100, bierOorRechts: true, eigenNaam: '', anderBier: null, ...instellingen }
   let klaar = false, baseline = null, frame = null, x = 0, y = 0, doelX = 0, doelY = 0
   let laatsteBron = '', bierPointer = null, aanraking = null, vorigeTik = null, negeerMuisTot = 0
   const cleanup = []
@@ -123,11 +147,21 @@ export function maakKoningsjachtScene(tafelElement, instellingen = {}) {
   laag.className = 'kj-scene-laag'
   laag.style.cssText = 'position:absolute;inset:0;overflow:hidden;pointer-events:none;user-select:none;z-index:-1;perspective:1200px;background:#28150d;'
   const materiaalStijl = doc.createElement('style')
-  materiaalStijl.textContent = MIDDELEEUWSE_KAARTSTIJL
+  materiaalStijl.textContent = MIDDELEEUWSE_KAARTSTIJL + COCKPIT_LAMPEN
   laag.appendChild(materiaalStijl)
   const decorLayer = doc.createElement('div')
   decorLayer.className = 'kj-scene-decor'
   decorLayer.style.cssText = 'position:absolute;inset:-5%;pointer-events:none;background-position:center;background-size:cover;background-repeat:no-repeat;transform-origin:50% 62%;backface-visibility:hidden;will-change:transform;'
+  const lampenLayer = doc.createElement('div')
+  lampenLayer.className = 'kj-ship-lampen'
+  lampenLayer.setAttribute('aria-hidden', 'true')
+  for (const [kant, plek] of [['links', 'buiten'], ['links', 'binnen'], ['rechts', 'binnen'], ['rechts', 'buiten']]) {
+    const lamp = doc.createElement('div')
+    lamp.className = `kj-ship-lamp kj-${kant} kj-${plek}`
+    lamp.innerHTML = '<span class="kj-lamp-sokkel"></span><span class="kj-lamp-arm"></span><span class="kj-lamp-kop"></span><span class="kj-lamp-bundel"></span>'
+    lampenLayer.appendChild(lamp)
+  }
+  decorLayer.appendChild(lampenLayer)
   // De labels blijven boven het donkere kaarslicht leesbaar.
   const bierLayer = doc.createElement('div')
   bierLayer.className = 'kj-scene-pullen'
@@ -263,6 +297,9 @@ export function maakKoningsjachtScene(tafelElement, instellingen = {}) {
     const hout = new URL('./assets/koningsjacht/' + achtergrond, import.meta.url).href
     const reserve = new URL('./kaarten/hout.webp', import.meta.url).href
     decorLayer.style.backgroundImage = `url("${hout}"), url("${reserve}")`
+    decorLayer.dataset.scene = gekozenScene
+    decorLayer.dataset.interior = gekozenScene === 'modern' ? (opties.modernInterior || 'none') : 'none'
+    decorLayer.dataset.lampen = opties.lampenAan === true ? 'aan' : 'uit'
     decorLayer.dataset.speltype = opties.multiplayer === true ? opties.multiplayerMode || 'samen' : ''
     const andere = opties.anderBier && typeof opties.anderBier === 'object' && !Array.isArray(opties.anderBier) ? opties.anderBier : {}
     function toonPul(pul, zichtbaar, inhoud, oorRechts, naam, ronde) {

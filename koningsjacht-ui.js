@@ -24,7 +24,7 @@ import { maakEindscene } from './koningsjacht-eindscene.js?v=8'
 import * as K from './koningsjacht.js?v=2'
 import { maakKaartTafel, kaartSvg, achterkantSvg, kaartNaam, KLEUR_TEKEN, zetStijl, REACTIES, KAART_INSTELLINGEN, kaartInstellingen, zetKaartInstelling } from './kaartspel-hulp.js?v=19'
 import { speel as geluid, muziekStaatAan, zetMuziek, startMuziek, stopMuziek, zetMuziekThema } from './koningsjacht-geluid.js?v=4'
-import { maakKoningsjachtScene } from './koningsjacht-scene.js?v=14'
+import { maakKoningsjachtScene } from './koningsjacht-scene.js?v=15'
 import { zetKaarsSlijtage } from './koningsjacht-kaarsen.js?v=1'
 import { verbindBierpul, herstelBierPartij } from './koningsjacht-bier.js?v=2'
 import { maakKoningsjachtScoreService } from './koningsjacht-scores.js?v=1'
@@ -314,7 +314,7 @@ export function start({ spelKanaal = null, benIkSpeler1 = true, vriendNaam = '',
   let STIJL = sceneNaam() === 'modern' ? 'modern' : 'perkament'
   let scene = null, flikkerTimer = null, anderBier = null, bierTimer = null
 
-  const sceneOpties = () => ({ ...instellingen, scene: sceneNaam(), multiplayer, multiplayerMode: sceneMode, anderBier, eigenNaam: T('Jij'), bierLabel: T('Inhoud van je bierpul'), onBierInhoud: wijzigBierInhoud, onBierNieuw: nieuweBierpul })
+  const sceneOpties = () => ({ ...instellingen, scene: sceneNaam(), lampenAan: kaarsAan(), multiplayer, multiplayerMode: sceneMode, anderBier, eigenNaam: T('Jij'), bierLabel: T('Inhoud van je bierpul'), onBierInhoud: wijzigBierInhoud, onBierNieuw: nieuweBierpul })
   zetMuziekThema(sceneNaam() === 'middeleeuws' ? 'middeleeuws' : 'standaard')
 
   function bewaarInstellingen() {
@@ -733,7 +733,7 @@ export function start({ spelKanaal = null, benIkSpeler1 = true, vriendNaam = '',
   const kaarsAan = () => { try { return localStorage.getItem(KAARS) !== 'uit' } catch (e) { return true } }
   function wisselKaars() {
     try { localStorage.setItem(KAARS, kaarsAan() ? 'uit' : 'aan') } catch (e) {}
-    tafel?.element.classList.toggle('kj-geenkaars', !kaarsAan()); verversKaarslicht(); tekenKnoppen()
+    tafel?.element.classList.toggle('kj-geenkaars', !kaarsAan()); scene?.update({ lampenAan: kaarsAan() }); verversKaarslicht(); tekenKnoppen()
   }
   const kaarsSvg = '<svg viewBox="0 0 30 70" aria-hidden="true"><defs><linearGradient id="kjWas" x1="0" x2="1"><stop offset="0" stop-color="#d8c7a0"/><stop offset=".45" stop-color="#fff6dc"/><stop offset="1" stop-color="#b9a37a"/></linearGradient></defs>'
     + '<ellipse cx="15" cy="66" rx="14" ry="4" fill="#3a2410" opacity=".7"/><rect x="5" y="58" width="20" height="9" rx="3" fill="#8a6a2a"/><rect x="8" y="12" width="14" height="49" rx="3" fill="url(#kjWas)"/>'
